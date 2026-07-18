@@ -403,7 +403,7 @@ input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:poin
 
 <!-- ===================== TITLE BAR ===================== -->
 <div id="tb">
-  <div class="logo">Dovahkiin's Codex<span>SKYRIM TTRPG COMPANION</span></div>
+  <div class="logo">Dovahkiin's Codex<span>SKYRIM TTRPG COMPANION · v2.1</span></div>
   <div id="ntabs">
     <div class="nt on"  onclick="gp('characters',this)">⚔ Characters</div>
     <div class="nt"     onclick="gp('quests',this)">📜 Quest Log</div>
@@ -1103,6 +1103,14 @@ input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:poin
       </div>
     </div>
     <p id="fbmsg" style="font-size:10px;color:var(--gold-dark);min-height:16px;"></p>
+    <div class="fx gap6 mb8">
+      <button class="btn btn-sm" onclick="fbPing()">📡 Test Connection</button>
+      <span style="font-size:9px;color:var(--parchment-dark);align-self:center;">App version: <strong>v2.1</strong> — both devices must show the same version (hard-refresh if not)</span>
+    </div>
+    <div class="mb8">
+      <span class="lbl">Sync Log</span>
+      <pre id="fblog" style="background:rgba(0,0,0,.4);border:1px solid var(--pbr);border-radius:3px;padding:6px;font-size:9px;max-height:110px;overflow-y:auto;white-space:pre-wrap;color:var(--parchment-dark);margin:0;">—</pre>
+    </div>
     <p style="font-size:9px;color:var(--parchment-dark);">
       The campaign code is access control between friends, not security — don't post it publicly.
       While connected, the last edit wins if two people change the same thing at once.
@@ -1261,7 +1269,7 @@ function renCharList(){
     d.className = 'nt' + (c.id===ST.activeCharId ? ' on' : '');
     d.style.cssText = 'display:flex;align-items:center;gap:5px;padding:5px 10px;';
     var face = c.portrait
-      ? '<img src="'+c.portrait+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover;border:1px solid var(--gold-dark);">'
+      ? '<img src="'+c.portrait+'" style="width:18px;height:18px;object-fit:contain;border:1px solid var(--gold-dark);">'
       : '👤';
     d.innerHTML = face + ' ' + c.name +
       ' <span style="font-size:8px;color:var(--gold-dark);">Lv.'+c.level+'</span>' +
@@ -2212,27 +2220,25 @@ function drawGrid(){
 /* Tokens: character portraits draw as circular images with gold ring,
    preset tokens draw as emoji; both show name label below */
 function drawTok(t){
-  /* One 60px grid square. Images: centre-crop to square (aspect kept),
-     drawn from cache so dragging never flickers. */
+  /* Images fit one 60px grid square: longest side scales to 60,
+     the shorter side keeps the aspect ratio — no cropping. */
   var pic = t.img || t.portrait;
   if(pic){
     var img=getCachedImg(pic);
     if(img){
-      var sw=Math.min(img.width,img.height);
-      var sx=(img.width-sw)/2, sy=(img.height-sw)/2;
-      mctx.save(); mctx.beginPath(); mctx.arc(t.x,t.y,26,0,Math.PI*2); mctx.clip();
-      mctx.drawImage(img,sx,sy,sw,sw,t.x-26,t.y-26,52,52); mctx.restore();
+      var s=60/Math.max(img.width,img.height);
+      var dw=img.width*s, dh=img.height*s;
+      mctx.drawImage(img, t.x-dw/2, t.y-dh/2, dw, dh);
       mctx.strokeStyle='rgba(201,168,76,.9)'; mctx.lineWidth=2;
-      mctx.beginPath(); mctx.arc(t.x,t.y,26,0,Math.PI*2); mctx.stroke();
+      mctx.strokeRect(t.x-dw/2, t.y-dh/2, dw, dh);
       mctx.font='9px Cinzel,serif'; mctx.fillStyle='rgba(232,208,138,.95)';
       mctx.textAlign='center'; mctx.textBaseline='top';
-      mctx.fillText(t.label||'',t.x,t.y+28);
+      mctx.fillText(t.label||'',t.x,t.y+dh/2+3);
       return;
     }
     if(IMG_CACHE[pic] && IMG_CACHE[pic].err){ drawTokEmoji(t); return; }
-    /* still loading: placeholder ring; cache onload triggers redraw */
     mctx.strokeStyle='rgba(201,168,76,.4)'; mctx.lineWidth=2;
-    mctx.beginPath(); mctx.arc(t.x,t.y,26,0,Math.PI*2); mctx.stroke();
+    mctx.strokeRect(t.x-30,t.y-30,60,60);
     return;
   }
   drawTokEmoji(t);
@@ -2247,10 +2253,12 @@ function drawTokEmoji(t){
 function drawProp(p){
   var img=getCachedImg(p.src);
   if(!img)return; /* draws on the redraw the cache triggers when loaded */
-  var gw=Math.max(60,Math.round(p.w/60)*60);
-  var gh=Math.round((img.height/img.width)*gw); /* aspect ratio kept */
-  mctx.drawImage(img,p.x,p.y,gw,gh);
-  p.rw=gw; p.rh=gh;
+  /* Same rule as tokens: longest side scales to one 60px grid square,
+     the shorter side keeps the aspect ratio — no cropping, no stretch */
+  var s=60/Math.max(img.width,img.height);
+  var dw=img.width*s, dh=img.height*s;
+  mctx.drawImage(img,p.x,p.y,dw,dh);
+  p.rw=dw; p.rh=dh;
 }
 function drawPathSeg(path){
   if(!path||path.length<2)return;
@@ -2267,7 +2275,7 @@ function mDown(e){
   if(mTool==='move'){
     mDragProp=(m.props||[]).find(function(p){return x>=p.x&&x<=p.x+(p.rw||60)&&y>=p.y&&y<=p.y+(p.rh||60);});
     if(mDragProp){ mDox=x-mDragProp.x; mDoy=y-mDragProp.y; return; }
-    mDragTok=(m.tokens||[]).find(function(t){return Math.hypot(t.x-x,t.y-y)<26;});
+    mDragTok=(m.tokens||[]).find(function(t){return Math.hypot(t.x-x,t.y-y)<30;});
     if(mDragTok){ mDox=x-mDragTok.x; mDoy=y-mDragTok.y; }
   }else if(mTool==='draw'){
     mDrawing=true; mPath=[{x:x,y:y}];
@@ -2301,12 +2309,12 @@ function mUp(){
 /* Double-click a token on the map to rename it (bestiary dropdown available) */
 function mDbl(e){
   var xy=cXY(e), m=getMap();
-  var t=(m.tokens||[]).find(function(tk){return Math.hypot(tk.x-xy[0],tk.y-xy[1])<28;});
+  var t=(m.tokens||[]).find(function(tk){return Math.hypot(tk.x-xy[0],tk.y-xy[1])<30;});
   if(t)openTR(t.id);
 }
 function eraseAt(x,y){
   var m=getMap();
-  m.tokens=(m.tokens||[]).filter(function(t){return Math.hypot(t.x-x,t.y-y)>26;});
+  m.tokens=(m.tokens||[]).filter(function(t){return Math.hypot(t.x-x,t.y-y)>30;});
   m.drawings=(m.drawings||[]).filter(function(p){return !p.some(function(pt){return Math.hypot(pt.x-x,pt.y-y)<20;});});
   m.props=(m.props||[]).filter(function(p){return !(x>=p.x&&x<=p.x+(p.rw||60)&&y>=p.y&&y<=p.y+(p.rh||60));});
   redrawMap(); renPlaced(); autoSave();
@@ -2349,7 +2357,7 @@ function renMapBeasts(){
     d.className='toki'; d.draggable=true;
     d.dataset.icon=icon; d.dataset.label=b.name; d.dataset.bimg=b.img||'';
     d.ondragstart=function(e){tds(e,d);};
-    var face=b.img?'<img src="'+b.img+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover;" onerror="this.outerHTML=\''+icon+'\'">':icon;
+    var face=b.img?'<img src="'+b.img+'" style="width:18px;height:18px;object-fit:contain;" onerror="this.outerHTML=\''+icon+'\'">':icon;
     d.innerHTML='<span style="flex:1;display:flex;align-items:center;gap:4px;">'+face+' '+b.name+'</span>'+
       '<span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addBeastToMap(\''+b.id+'\')">＋</span>';
     el.appendChild(d);
@@ -2375,7 +2383,7 @@ function renMapChars(){
     d.dataset.icon='👤'; d.dataset.label=c.name; d.dataset.portrait=c.portrait||'';
     d.ondragstart=function(e){tds(e,d);};
     var face = c.portrait
-      ? '<img src="'+c.portrait+'" style="width:20px;height:20px;border-radius:50%;object-fit:cover;"> '
+      ? '<img src="'+c.portrait+'" style="width:20px;height:20px;object-fit:contain;"> '
       : '👤 ';
     d.innerHTML = '<span style="flex:1;display:flex;align-items:center;gap:4px;">'+face+c.name+'</span>' +
       '<span style="cursor:pointer;color:var(--gold);" title="Add to map centre" ' +
@@ -2460,8 +2468,8 @@ function applyImg(){
     if(mode==='bg'){ m.background=src; }
     else{
       if(!m.props)m.props=[];
-      /* Prop starts 3 grid squares wide; aspect ratio computed at draw time */
-      m.props.push({id:'p'+Date.now(),src:src,x:60,y:60,w:180,rw:180,rh:120});
+      /* Prop scales to one grid square at draw time, aspect ratio kept */
+      m.props.push({id:'p'+Date.now(),src:src,x:60,y:60,rw:60,rh:60});
     }
     redrawMap(); autoSave(); closeM('m-img');
     showMMsg(mode==='bg'?'Background set':'Prop added — use Move tool to position');
@@ -2928,6 +2936,21 @@ function fbSetMsg(t, ok){
   var el=document.getElementById('fbmsg');
   if(el){ el.textContent=t; el.style.color = ok?'#2a8a20':'var(--gold-dark)'; }
 }
+function fbLog(t){
+  var el=document.getElementById('fblog');
+  if(el) el.textContent = new Date().toLocaleTimeString()+'  '+t+'\n'+(el.textContent==='—'?'':el.textContent).slice(0,1200);
+}
+function fbPing(){
+  if(!FB.connected||!FB.base){ fbLog('Not connected — connect first.'); return; }
+  var t0=Date.now();
+  FB.base.child('ping').set({by:FB.myId,ts:t0}).then(function(){
+    return FB.base.child('ping').once('value');
+  }).then(function(snap){
+    fbLog('Ping OK — server round trip '+(Date.now()-t0)+'ms. Writes are working.');
+  }).catch(function(err){
+    fbLog('PING FAILED: '+err.message+' — check database rules / databaseURL.');
+  });
+}
 function fbStatus(){
   var el=document.getElementById('livest'); if(!el)return;
   if(FB.connected){ el.textContent='🌐 LIVE · '+FB.code; el.style.color='#2a8a20'; }
@@ -2942,7 +2965,8 @@ function loadScriptSeq(urls, done, fail){
   document.head.appendChild(s);
 }
 function connectLive(){
-  var cfgTxt=document.getElementById('fbcfg').value.trim();
+  var cfgTxt=document.getElementById('fbcfg').value.trim()
+    .replace(/[\u201C\u201D]/g,'"').replace(/[\u2018\u2019]/g,"'");
   var code=(document.getElementById('fbcode').value.trim()||'').replace(/[^a-zA-Z0-9_-]/g,'');
   if(!cfgTxt||!code){ fbSetMsg('Paste your Firebase config and choose a campaign code.'); return; }
   var cfg;
@@ -2959,8 +2983,8 @@ function connectLive(){
   var boot=function(){
     try{
       if(!FB.db){
-        firebase.initializeApp(cfg);
-        FB.db=firebase.database();
+        if(firebase.apps && firebase.apps.length){ FB.db=firebase.database(); }
+        else { firebase.initializeApp(cfg); FB.db=firebase.database(); }
       }
       startSync(code);
     }catch(err){ fbSetMsg('Firebase error: '+err.message); }
@@ -2977,18 +3001,29 @@ function startSync(code){
   FB.base=FB.db.ref('campaigns/'+code);
   FB.connTs=Date.now();
   /* State listener: apply remote edits */
+  /* Real connectivity indicator (green LIVE only when truly online) */
+  FB.db.ref('.info/connected').on('value', function(s){
+    fbLog(s.val()?'Realtime connection: ONLINE':'Realtime connection: offline (retrying…)');
+    var el=document.getElementById('livest');
+    if(el&&FB.connected) el.style.color = s.val()?'#2a8a20':'#c8a000';
+  });
   FB.base.child('state').on('value', function(snap){
     var d=snap.val();
-    if(!d||d.by===FB.myId)return;
+    if(!d){ fbLog('State event: campaign is empty on server.'); return; }
+    if(d.by===FB.myId){ fbLog('State event: my own write confirmed ('+((d.json||'').length)+' chars).'); return; }
+    fbLog('Receiving state from another device ('+((d.json||'').length)+' chars)…');
     FB.applying=true;
     try{
       var st=JSON.parse(d.json);
       Object.keys(st).forEach(function(k){ ST[k]=st[k]; });
       normChars();
       renderAll(); refit();
-      var si=document.getElementById('si');
-      si.textContent='● Synced '+new Date().toLocaleTimeString();
-    }catch(e){}
+      document.getElementById('si').textContent='● Synced '+new Date().toLocaleTimeString();
+      fbLog('Applied remote state ✓');
+    }catch(e){
+      fbLog('APPLY ERROR: '+e.message);
+      fbSetMsg('Received state but failed to apply: '+e.message);
+    }
     FB.applying=false;
   });
   /* FX listener: flashes, shouts, sounds from other clients */
@@ -2999,6 +3034,7 @@ function startSync(code){
     else if(e.kind==='shout') shoutFX(e.text,e.desc,true);
     else if(e.kind==='sound') remoteSound(e);
   });
+  localStorage.setItem('dc3fbauto','1');
   FB.connected=true;
   FB.ready=false; /* blocks pushes until the initial handshake completes */
   fbStatus();
@@ -3012,6 +3048,7 @@ function startSync(code){
   FB.base.child('state').once('value').then(function(snap){
     var d=snap.val();
     FB.ready=true;
+    fbLog(d&&d.json?'Handshake: server has campaign data ('+d.json.length+' chars).':'Handshake: campaign empty — seeding from this device.');
     if(!d||!d.json){
       fbSetMsg('Connected — you seeded campaign "'+code+'" with this device\u2019s data.', true);
       pushState();
@@ -3027,6 +3064,7 @@ function stopListeners(){
   try{ FB.base.child('state').off(); FB.base.child('fx').off(); }catch(e){}
 }
 function disconnectLive(){
+  localStorage.setItem('dc3fbauto','0');
   if(FB.base) stopListeners();
   FB.connected=false; FB.base=null;
   fbStatus(); fbSetMsg('Disconnected — back to local-only.');
@@ -3038,7 +3076,13 @@ function pushState(){
     if(!FB.connected)return;
     var d=JSON.parse(JSON.stringify(ST));
     d.sounds=d.sounds.filter(function(s){return s.type==='url';});
-    FB.base.child('state').set({by:FB.myId,ts:Date.now(),json:JSON.stringify(d)});
+    var payload=JSON.stringify(d);
+    FB.base.child('state').set({by:FB.myId,ts:Date.now(),json:payload}).then(function(){
+      fbLog('Pushed state ('+payload.length+' chars) ✓');
+    }).catch(function(err){
+      fbLog('PUSH FAILED: '+err.message);
+      fbSetMsg('Could not write to campaign: '+err.message);
+    });
   },700);
 }
 function broadcastFX(e){
@@ -3123,6 +3167,11 @@ renderAll();
 fbRestoreFields();
 fbStatus();
 chkOrient();
+/* Auto-reconnect if this device connected successfully before */
+if(localStorage.getItem('dc3fbauto')==='1'
+   && localStorage.getItem('dc3fbcfg') && localStorage.getItem('dc3fbcode')){
+  setTimeout(connectLive, 600);
+}
 </script>
 </body>
 </html>
