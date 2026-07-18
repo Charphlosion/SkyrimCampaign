@@ -144,7 +144,8 @@ input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:poin
 .skfill.combat{background:linear-gradient(90deg,#6b2a00,#c85a00);}
 .skfill.stealth{background:linear-gradient(90deg,#000,#3a3a3a);}
 .skfill.magic{background:linear-gradient(90deg,#3a0060,#6a2aaa);}
-.sknum{width:42px;font-family:'Cinzel',serif;font-size:10px;color:var(--gold);text-align:right;padding:3px 4px;}
+.skrow input.sknum{width:42px;flex:0 0 42px;font-family:'Cinzel',serif;font-size:10px;color:var(--gold);text-align:right;padding:3px 4px;}
+.skrow .sktrack{flex:1 1 auto;min-width:60px;}
 .skleg{color:var(--gold-dark);cursor:pointer;font-size:11px;line-height:1;}
 .skleg.on{color:var(--gold);text-shadow:0 0 5px rgba(201,168,76,.6);}
 /* ============================================================
@@ -382,11 +383,21 @@ input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:poin
 @keyframes cflip{0%{transform:rotateY(0)}100%{transform:rotateY(1080deg)}}
 .cfp{animation:cflip .8s ease-out;}
 #drn img.coinres{width:64px;height:64px;object-fit:contain;border-radius:50%;vertical-align:middle;box-shadow:0 0 18px rgba(201,168,76,.5);}
+
+@keyframes rotwig{0%,100%{transform:rotate(0)}50%{transform:rotate(90deg)}}
 </style>
 </head>
 <body>
 <!-- Magic flash overlay -->
 <div id="mov"></div>
+<!-- Rotate prompt for portrait phones -->
+<div id="rotov" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9500;background:rgba(10,8,4,.96);flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;">
+  <div style="font-size:44px;animation:rotwig 1.6s ease-in-out infinite;">📱</div>
+  <div style="font-family:'Cinzel',serif;font-size:15px;color:var(--gold);margin:12px 0 6px;">Rotate your device</div>
+  <div style="font-size:11px;color:var(--parchment-dark);max-width:260px;">The Codex is built for landscape. Turn your phone sideways for the full table view.</div>
+  <button class="btn" style="margin-top:16px;" onclick="document.getElementById('rotov').dataset.dism='1';document.getElementById('rotov').style.display='none';">Continue in portrait anyway</button>
+</div>
+
 <!-- Level-up banner -->
 <div id="lup">⭐ LEVEL UP! ⭐<br><span id="lutxt" style="font-size:13px;font-family:'Cinzel',serif"></span></div>
 
@@ -641,6 +652,11 @@ input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:poin
     <button class="mtbtn" onclick="openBgM()">🖼 Background</button>
     <button class="mtbtn" onclick="openPropM()">📦 Add Prop</button>
     <div class="msep"></div>
+    <button class="mtbtn" onclick="zoomMap(-0.2)">➖</button>
+    <span id="mzlbl" style="font-size:9px;color:var(--gold-dark);min-width:32px;text-align:center;">100%</span>
+    <button class="mtbtn" onclick="zoomMap(0.2)">➕</button>
+    <button class="mtbtn" onclick="zoomMap(0)">1:1</button>
+    <div class="msep"></div>
     <button class="mtbtn" onclick="togMSB()">⊟ Sidebar</button>
     <button class="mtbtn" onclick="togMFS()">⛶ Fullscreen</button>
     <button class="mtbtn" style="margin-left:auto;color:var(--gold);" onclick="saveMapNow()">💾 Save Map</button>
@@ -654,16 +670,16 @@ input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:poin
     <div id="msb">
       <div id="msbi">
         <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:var(--gold-dark);margin-bottom:7px;">DRAG TOKENS TO MAP</div>
-        <div class="toki" draggable="true" data-icon="⚔" data-label="Fighter" ondragstart="tds(event,this)">⚔ Fighter</div>
-        <div class="toki" draggable="true" data-icon="🧙" data-label="Mage" ondragstart="tds(event,this)">🧙 Mage</div>
-        <div class="toki" draggable="true" data-icon="🏹" data-label="Archer" ondragstart="tds(event,this)">🏹 Archer</div>
-        <div class="toki" draggable="true" data-icon="💀" data-label="Enemy" ondragstart="tds(event,this)">💀 Enemy</div>
-        <div class="toki" draggable="true" data-icon="🐉" data-label="Dragon" ondragstart="tds(event,this)">🐉 Dragon</div>
-        <div class="toki" draggable="true" data-icon="👑" data-label="NPC" ondragstart="tds(event,this)">👑 NPC</div>
-        <div class="toki" draggable="true" data-icon="📍" data-label="Marker" ondragstart="tds(event,this)">📍 Marker</div>
-        <div class="toki" draggable="true" data-icon="🏰" data-label="Location" ondragstart="tds(event,this)">🏰 Location</div>
-        <div class="toki" draggable="true" data-icon="💎" data-label="Loot" ondragstart="tds(event,this)">💎 Loot</div>
-        <div class="toki" draggable="true" data-icon="⚠" data-label="Danger" ondragstart="tds(event,this)">⚠ Danger</div>
+        <div class="toki" draggable="true" data-icon="⚔" data-label="Fighter" ondragstart="tds(event,this)"><span style="flex:1;">⚔ Fighter</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('⚔','Fighter')">＋</span></div>
+        <div class="toki" draggable="true" data-icon="🧙" data-label="Mage" ondragstart="tds(event,this)"><span style="flex:1;">🧙 Mage</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('🧙','Mage')">＋</span></div>
+        <div class="toki" draggable="true" data-icon="🏹" data-label="Archer" ondragstart="tds(event,this)"><span style="flex:1;">🏹 Archer</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('🏹','Archer')">＋</span></div>
+        <div class="toki" draggable="true" data-icon="💀" data-label="Enemy" ondragstart="tds(event,this)"><span style="flex:1;">💀 Enemy</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('💀','Enemy')">＋</span></div>
+        <div class="toki" draggable="true" data-icon="🐉" data-label="Dragon" ondragstart="tds(event,this)"><span style="flex:1;">🐉 Dragon</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('🐉','Dragon')">＋</span></div>
+        <div class="toki" draggable="true" data-icon="👑" data-label="NPC" ondragstart="tds(event,this)"><span style="flex:1;">👑 NPC</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('👑','NPC')">＋</span></div>
+        <div class="toki" draggable="true" data-icon="📍" data-label="Marker" ondragstart="tds(event,this)"><span style="flex:1;">📍 Marker</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('📍','Marker')">＋</span></div>
+        <div class="toki" draggable="true" data-icon="🏰" data-label="Location" ondragstart="tds(event,this)"><span style="flex:1;">🏰 Location</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('🏰','Location')">＋</span></div>
+        <div class="toki" draggable="true" data-icon="💎" data-label="Loot" ondragstart="tds(event,this)"><span style="flex:1;">💎 Loot</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('💎','Loot')">＋</span></div>
+        <div class="toki" draggable="true" data-icon="⚠" data-label="Danger" ondragstart="tds(event,this)"><span style="flex:1;">⚠ Danger</span><span style="cursor:pointer;color:var(--gold);" title="Add to map centre" onclick="addTokCenter('⚠','Danger')">＋</span></div>
         <hr class="sep">
         <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:var(--gold-dark);margin-bottom:5px;">CHARACTERS (drag to map)</div>
         <div id="mchartoks"></div>
@@ -725,20 +741,6 @@ input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:poin
       <ul id="dhist" style="list-style:none;max-height:130px;overflow-y:auto;font-size:10px;"></ul>
     </div>
   </div>
-  <div class="sa" style="max-width:370px;">
-    <div class="card">
-      <div class="ctit">🐉 DRAGON SHOUTS</div>
-      <div class="fxc gap6">
-        <button class="btn btn-f" onclick="shoutFX('FUS RO DAH','Unrelenting Force — targets hurled back!')">FUS RO DAH!</button>
-        <button class="btn btn-f" style="color:#ff9090;border-color:#8b1a1a;" onclick="shoutFX('YOL TOOR SHUL','Fire Breath — dragonfire erupts!')">YOL TOOR SHUL!</button>
-        <button class="btn btn-f" style="color:#a0e0f0;border-color:#1a3a6b;" onclick="shoutFX('TIID KLO UL','Slow Time — the world decelerates.')">TIID KLO UL!</button>
-        <div class="fx gap6">
-          <input type="text" id="cshout" placeholder="Custom words of power…">
-          <button class="btn" onclick="shoutFX(document.getElementById('cshout').value,'The words echo across Nirn…')">Shout!</button>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- ============ PLAYER PLANNING PANEL (single editable area, no save/delete) ============ -->
@@ -776,6 +778,18 @@ input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:poin
             <button class="btn mb4" style="background:rgba(140,0,160,.15);border-color:#c050c0;color:#f0b0f0;" onclick="trigM('illusion')">🌀 Illusion</button>
           </div>
         </div>
+        <div class="card mb10">
+      <div class="ctit">🐉 DRAGON SHOUTS</div>
+      <div class="fxc gap6">
+        <button class="btn btn-f" onclick="shoutFX('FUS RO DAH','Unrelenting Force — targets hurled back!')">FUS RO DAH!</button>
+        <button class="btn btn-f" style="color:#ff9090;border-color:#8b1a1a;" onclick="shoutFX('YOL TOOR SHUL','Fire Breath — dragonfire erupts!')">YOL TOOR SHUL!</button>
+        <button class="btn btn-f" style="color:#a0e0f0;border-color:#1a3a6b;" onclick="shoutFX('TIID KLO UL','Slow Time — the world decelerates.')">TIID KLO UL!</button>
+        <div class="fx gap6">
+          <input type="text" id="cshout" placeholder="Custom words of power…">
+          <button class="btn" onclick="shoutFX(document.getElementById('cshout').value,'The words echo across Nirn…')">Shout!</button>
+        </div>
+      </div>
+    </div>
         <div class="card mb10">
           <div class="ctit">🔊 SOUND BOARD — upload files or paste a direct audio URL</div>
           <div class="fx gap8 mb10" style="flex-wrap:wrap;align-items:flex-end;">
@@ -1306,18 +1320,12 @@ function loadChar(id){
   renSkills(c); renInv(); renJ(c); renShouts(c); renSH(c); renMods(c); renCondRows(c);
 }
 function upPort(){
-  var c = getChar(); if(!c) return;
-  var i = document.createElement('input'); i.type='file'; i.accept='image/*';
-  i.onchange = function(e){
-    var r = new FileReader();
-    r.onload = function(ev){
-      c.portrait = ev.target.result;
-      document.getElementById('cpw').innerHTML = '<img src="'+c.portrait+'">';
-      renMapChars(); autoSave();
-    };
-    r.readAsDataURL(e.target.files[0]);
-  };
-  i.click();
+  if(!getChar()) return;
+  document.getElementById('imgmode').value='portrait';
+  document.getElementById('imgtit').textContent='Set Character Portrait';
+  document.getElementById('imgfile').value='';
+  document.getElementById('imgurl').value='';
+  openM('m-img');
 }
 /* Character sub-tab switching — explicit (tab, el) signature */
 function sct(tab, el){
@@ -2010,6 +2018,76 @@ function updSs(id,f,v){ var s=ST.sessionHistory.find(function(x){return x.id===i
    MAP — canvas, drag tokens, draw, erase, props, fullscreen,
    collapsible sidebar/toolbar, save feedback, naming
    ============================================================ */
+
+/* ============================================================
+   MAP TOUCH + ZOOM
+   - 1 finger: acts as the current tool (move tokens, draw, erase)
+   - 2 fingers: pinch to zoom, drag to pan
+   - Toolbar zoom buttons for mouse users too
+   All canvas coordinates divide by the zoom factor so tools stay
+   accurate at any zoom level.
+   ============================================================ */
+var mZoom=1, mPinch=null;
+function applyZoom(){
+  if(!mc)return;
+  mc.style.transform='scale('+mZoom+')';
+  mc.style.transformOrigin='0 0';
+  var z=document.getElementById('mzlbl');
+  if(z)z.textContent=Math.round(mZoom*100)+'%';
+}
+function zoomMap(d){
+  mZoom=Math.min(3,Math.max(0.4, d===0?1:mZoom+d));
+  applyZoom();
+}
+function mkTE(t){ return {clientX:t.clientX, clientY:t.clientY}; }
+function tDist(e){ var a=e.touches[0],b=e.touches[1]; return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY); }
+function tMid(e){ var a=e.touches[0],b=e.touches[1]; return {x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2}; }
+function tchS(e){
+  var wrap=document.getElementById('mcwrap');
+  if(e.touches.length===1){
+    e.preventDefault();
+    mDown(mkTE(e.touches[0]));
+  }else if(e.touches.length===2){
+    e.preventDefault();
+    /* cancel any single-finger action in progress */
+    mDragTok=null; mDragProp=null; mDrawing=false; mPath=[];
+    mPinch={ d:tDist(e), z:mZoom, mid:tMid(e),
+      sx:wrap.scrollLeft, sy:wrap.scrollTop };
+  }
+}
+function tchM(e){
+  if(e.touches.length===1 && !mPinch){
+    e.preventDefault();
+    mMove(mkTE(e.touches[0]));
+  }else if(e.touches.length===2 && mPinch){
+    e.preventDefault();
+    var wrap=document.getElementById('mcwrap');
+    var nd=tDist(e), nm=tMid(e);
+    mZoom=Math.min(3,Math.max(0.4, mPinch.z*nd/mPinch.d));
+    applyZoom();
+    wrap.scrollLeft = mPinch.sx + (mPinch.mid.x-nm.x);
+    wrap.scrollTop  = mPinch.sy + (mPinch.mid.y-nm.y);
+  }
+}
+function tchE(e){
+  if(e.touches.length===0){
+    if(!mPinch) mUp();
+    mPinch=null;
+  }
+}
+/* Tap-to-add for mobile (drag needs a mouse): drop at the centre
+   of the current view, zoom-aware */
+function addTokCenter(icon,label,portrait,img){
+  var wrap=document.getElementById('mcwrap');
+  var m=getMap();
+  if(!m.tokens)m.tokens=[];
+  m.tokens.push({id:'tok'+Date.now(),icon:icon||'📍',label:label||'',
+    portrait:portrait||null,img:img||null,
+    x:(wrap.scrollLeft+wrap.clientWidth/2)/mZoom,
+    y:(wrap.scrollTop+wrap.clientHeight/2)/mZoom});
+  redrawMap(); renPlaced(); autoSave();
+}
+
 var mc, mctx, mTool='move', mDrawing=false, mPath=[], mDragTok=null, mDragProp=null, mDox=0, mDoy=0;
 function getMap(){ return ST.maps.find(function(m){return m.id===ST.activeMapId;})||ST.maps[0]; }
 function initMap(){
@@ -2019,6 +2097,10 @@ function initMap(){
   mc.width = Math.max(1400, wrap.clientWidth);
   mc.height = Math.max(1000, wrap.clientHeight);
   mc.onmousedown = mDown; mc.onmousemove = mMove; mc.onmouseup = mUp; mc.ondblclick = mDbl;
+  mc.addEventListener('touchstart',tchS,{passive:false});
+  mc.addEventListener('touchmove',tchM,{passive:false});
+  mc.addEventListener('touchend',tchE,{passive:false});
+  applyZoom();
   wrap.ondragover = function(e){ e.preventDefault(); };
   wrap.ondrop = mDrop;
   loadMapUI(); redrawMap();
@@ -2086,6 +2168,19 @@ function togMFS(){
   else document.getElementById('msb').classList.toggle('cl',!msbv);
   setTimeout(initMap,60);
 }
+/* Image cache: map/token images load once, then draw synchronously.
+   This removes the background flash on every drag redraw. */
+var IMG_CACHE={};
+function getCachedImg(src){
+  var c=IMG_CACHE[src];
+  if(c) return c.ok?c.img:null;
+  var img=new Image();
+  IMG_CACHE[src]={img:img,ok:false};
+  img.onload=function(){ IMG_CACHE[src].ok=true; redrawMap(); };
+  img.onerror=function(){ IMG_CACHE[src].err=true; };
+  img.src=src;
+  return null;
+}
 /* Canvas drawing pipeline: background → grid → props → drawings → tokens */
 function redrawMap(){
   if(!mctx)return;
@@ -2097,14 +2192,17 @@ function redrawMap(){
     (m.drawings||[]).forEach(drawPathSeg);
     (m.tokens||[]).forEach(drawTok);
   }
+  mctx.fillStyle='#0a0806'; mctx.fillRect(0,0,W,H);
   if(m.background){
-    var img=new Image();
-    img.onload=function(){ mctx.drawImage(img,0,0,W,H); fin(); };
-    img.onerror=fin;
-    img.src=m.background;
-  }else{
-    mctx.fillStyle='#0a0806'; mctx.fillRect(0,0,W,H); fin();
+    var bg=getCachedImg(m.background);
+    if(bg){
+      /* contain: scale to fit inside canvas, keep aspect ratio, centre */
+      var s=Math.min(W/bg.width, H/bg.height);
+      var bw=bg.width*s, bh=bg.height*s;
+      mctx.drawImage(bg,(W-bw)/2,(H-bh)/2,bw,bh);
+    }
   }
+  fin();
 }
 function drawGrid(){
   mctx.strokeStyle='rgba(201,168,76,0.1)'; mctx.lineWidth=1;
@@ -2114,23 +2212,30 @@ function drawGrid(){
 /* Tokens: character portraits draw as circular images with gold ring,
    preset tokens draw as emoji; both show name label below */
 function drawTok(t){
-  /* Everything fits one 60px grid square: images draw as 26px-radius
-     circles (52px), emoji at 34px, label tucked under the edge */
+  /* One 60px grid square. Images: centre-crop to square (aspect kept),
+     drawn from cache so dragging never flickers. */
   var pic = t.img || t.portrait;
   if(pic){
-    var img=new Image();
-    img.onload=function(){
+    var img=getCachedImg(pic);
+    if(img){
+      var sw=Math.min(img.width,img.height);
+      var sx=(img.width-sw)/2, sy=(img.height-sw)/2;
       mctx.save(); mctx.beginPath(); mctx.arc(t.x,t.y,26,0,Math.PI*2); mctx.clip();
-      mctx.drawImage(img,t.x-26,t.y-26,52,52); mctx.restore();
+      mctx.drawImage(img,sx,sy,sw,sw,t.x-26,t.y-26,52,52); mctx.restore();
       mctx.strokeStyle='rgba(201,168,76,.9)'; mctx.lineWidth=2;
       mctx.beginPath(); mctx.arc(t.x,t.y,26,0,Math.PI*2); mctx.stroke();
       mctx.font='9px Cinzel,serif'; mctx.fillStyle='rgba(232,208,138,.95)';
       mctx.textAlign='center'; mctx.textBaseline='top';
       mctx.fillText(t.label||'',t.x,t.y+28);
-    };
-    img.onerror=function(){ drawTokEmoji(t); };
-    img.src=pic;
-  }else drawTokEmoji(t);
+      return;
+    }
+    if(IMG_CACHE[pic] && IMG_CACHE[pic].err){ drawTokEmoji(t); return; }
+    /* still loading: placeholder ring; cache onload triggers redraw */
+    mctx.strokeStyle='rgba(201,168,76,.4)'; mctx.lineWidth=2;
+    mctx.beginPath(); mctx.arc(t.x,t.y,26,0,Math.PI*2); mctx.stroke();
+    return;
+  }
+  drawTokEmoji(t);
 }
 function drawTokEmoji(t){
   mctx.font='34px serif'; mctx.textAlign='center'; mctx.textBaseline='middle';
@@ -2140,14 +2245,12 @@ function drawTokEmoji(t){
 }
 /* Props: image scaled to nearest grid multiple wide, aspect ratio kept */
 function drawProp(p){
-  var img=new Image();
-  img.onload=function(){
-    var gw=Math.max(60,Math.round(p.w/60)*60);
-    var gh=Math.round((img.height/img.width)*gw);
-    mctx.drawImage(img,p.x,p.y,gw,gh);
-    p.rw=gw; p.rh=gh;
-  };
-  img.src=p.src;
+  var img=getCachedImg(p.src);
+  if(!img)return; /* draws on the redraw the cache triggers when loaded */
+  var gw=Math.max(60,Math.round(p.w/60)*60);
+  var gh=Math.round((img.height/img.width)*gw); /* aspect ratio kept */
+  mctx.drawImage(img,p.x,p.y,gw,gh);
+  p.rw=gw; p.rh=gh;
 }
 function drawPathSeg(path){
   if(!path||path.length<2)return;
@@ -2158,7 +2261,7 @@ function drawPathSeg(path){
   path.forEach(function(pt){ mctx.lineTo(pt.x,pt.y); });
   mctx.stroke();
 }
-function cXY(e){ var r=mc.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; }
+function cXY(e){ var r=mc.getBoundingClientRect(); return [(e.clientX-r.left)/mZoom,(e.clientY-r.top)/mZoom]; }
 function mDown(e){
   var xy=cXY(e), x=xy[0], y=xy[1], m=getMap();
   if(mTool==='move'){
@@ -2225,7 +2328,7 @@ function mDrop(e){
   var m=getMap();
   if(!m.tokens)m.tokens=[];
   m.tokens.push({id:'tok'+Date.now(),icon:icon,label:label,portrait:portrait||null,
-    img:bimg||null, x:e.clientX-r.left, y:e.clientY-r.top});
+    img:bimg||null, x:(e.clientX-r.left)/mZoom, y:(e.clientY-r.top)/mZoom});
   redrawMap(); renPlaced(); autoSave();
 }
 /* Character tokens in sidebar — portrait shown, dragging puts them on the map */
@@ -2260,7 +2363,7 @@ function addBeastToMap(bid){
   if(!m.tokens)m.tokens=[];
   var icon = b.type==='npc'?'👑':b.type==='ally'?'🛡':'💀';
   m.tokens.push({id:'tok'+Date.now(),icon:icon,label:b.name,img:b.img||null,portrait:null,
-    x:wrap.scrollLeft+wrap.clientWidth/2, y:wrap.scrollTop+wrap.clientHeight/2});
+    x:(wrap.scrollLeft+wrap.clientWidth/2)/mZoom, y:(wrap.scrollTop+wrap.clientHeight/2)/mZoom});
   redrawMap(); renPlaced(); autoSave();
 }
 function renMapChars(){
@@ -2271,9 +2374,12 @@ function renMapChars(){
     d.className='toki'; d.draggable=true;
     d.dataset.icon='👤'; d.dataset.label=c.name; d.dataset.portrait=c.portrait||'';
     d.ondragstart=function(e){tds(e,d);};
-    d.innerHTML = c.portrait
-      ? '<img src="'+c.portrait+'" style="width:20px;height:20px;border-radius:50%;object-fit:cover;"> '+c.name
-      : '👤 '+c.name;
+    var face = c.portrait
+      ? '<img src="'+c.portrait+'" style="width:20px;height:20px;border-radius:50%;object-fit:cover;"> '
+      : '👤 ';
+    d.innerHTML = '<span style="flex:1;display:flex;align-items:center;gap:4px;">'+face+c.name+'</span>' +
+      '<span style="cursor:pointer;color:var(--gold);" title="Add to map centre" ' +
+      'onclick="addTokCenter(\'👤\',\''+c.name.replace(/'/g,'')+'\',\''+(c.portrait||'')+'\')">＋</span>';
     el.appendChild(d);
   });
 }
@@ -2341,6 +2447,16 @@ function applyImg(){
   var url=document.getElementById('imgurl').value.trim();
   var m=getMap();
   function apply(src){
+    if(mode==='portrait'){
+      var c=getChar();
+      if(c){
+        c.portrait=src;
+        document.getElementById('cpw').innerHTML='<img src="'+src+'">';
+        renMapChars(); renCharList(); autoSave();
+      }
+      closeM('m-img');
+      return;
+    }
     if(mode==='bg'){ m.background=src; }
     else{
       if(!m.props)m.props=[];
@@ -2884,9 +3000,28 @@ function startSync(code){
     else if(e.kind==='sound') remoteSound(e);
   });
   FB.connected=true;
+  FB.ready=false; /* blocks pushes until the initial handshake completes */
   fbStatus();
-  fbSetMsg('Connected as campaign "'+code+'". Edits now sync live.', true);
-  pushState(); /* seed/refresh shared state */
+  fbSetMsg('Connecting — fetching campaign state…');
+  /* HANDSHAKE: read the server state ONCE before ever pushing.
+     - Server has data  -> the on('value') listener applies it; we never
+       overwrite it with our (possibly empty) local state.
+     - Server is empty  -> this device seeds the campaign.
+     This ordering is what prevents a fresh phone from wiping the
+     campaign the computer already built. */
+  FB.base.child('state').once('value').then(function(snap){
+    var d=snap.val();
+    FB.ready=true;
+    if(!d||!d.json){
+      fbSetMsg('Connected — you seeded campaign "'+code+'" with this device\u2019s data.', true);
+      pushState();
+    }else{
+      fbSetMsg('Connected to campaign "'+code+'" — server state loaded.', true);
+    }
+  }).catch(function(err){
+    fbSetMsg('Connected but could not read state: '+err.message);
+    FB.ready=true;
+  });
 }
 function stopListeners(){
   try{ FB.base.child('state').off(); FB.base.child('fx').off(); }catch(e){}
@@ -2897,7 +3032,7 @@ function disconnectLive(){
   fbStatus(); fbSetMsg('Disconnected — back to local-only.');
 }
 function pushState(){
-  if(!FB.connected||FB.applying)return;
+  if(!FB.connected||FB.applying||!FB.ready)return;
   clearTimeout(FB.debTimer);
   FB.debTimer=setTimeout(function(){
     if(!FB.connected)return;
@@ -2949,6 +3084,16 @@ document.querySelectorAll('.mbg').forEach(function(m){
 function refit(){
   if(document.getElementById('panel-map').classList.contains('on')) initMap();
 }
+
+/* Rotate prompt: shown on narrow portrait screens unless dismissed */
+function chkOrient(){
+  var el=document.getElementById('rotov');
+  if(!el||el.dataset.dism==='1')return;
+  var portrait = window.innerHeight>window.innerWidth && window.innerWidth<700;
+  el.style.display = portrait?'flex':'none';
+}
+window.addEventListener('resize',chkOrient);
+window.addEventListener('orientationchange',function(){setTimeout(chkOrient,250);});
 window.addEventListener('resize', refit);
 window.addEventListener('orientationchange', function(){ setTimeout(refit, 250); });
 
@@ -2977,6 +3122,7 @@ if(!ST.bestiary.length)seedBestiary();
 renderAll();
 fbRestoreFields();
 fbStatus();
+chkOrient();
 </script>
 </body>
 </html>
